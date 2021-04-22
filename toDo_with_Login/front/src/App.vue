@@ -1,15 +1,19 @@
 <template>
   <div class="todo">
-    <h1>ToDo list</h1>
+    <Account />
+    <h1>
+      ToDo list <span>of {{ userLogin }}</span>
+    </h1>
     <form class="todoInput">
       <input type="text" placeholder="print title" v-model="newToDo" />
-      <button @click="addItem()"><b>+ Add</b></button>
+      <button @click="addItem($event)"><b>+ Add</b></button>
     </form>
     <div class="todoList">
       <Item
-        v-for="item of items"
+        v-for="(item, index) of items"
         :key="item.id"
         :item="item"
+        :idx="index"
         @del="delItem"
         @done="doneItem"
       />
@@ -19,11 +23,13 @@
 
 <script>
 import Item from "./components/Item.vue";
-import { get, post, put, del } from "./requests";
+import Account from "./components/Account.vue";
+import { mapGetters } from "vuex";
+import api from "@api";
 
 export default {
   name: "App",
-  components: { Item },
+  components: { Account, Item },
   data() {
     return {
       items: [],
@@ -31,48 +37,66 @@ export default {
     };
   },
   async mounted() {
+    let result = null;
     try {
-      this.items = await get("/api/todo");
+      result = await api.get("/api/todo");
+      result = result.data;
+      if (result.result) {
+        this.items = result.result;
+      }
     } catch (err) {
-      console.log("GET ITEMS FAILURE ==> " + err);
+      console.log(`GET ITEM FAILURE ==> ${result.message} ` + err);
     }
   },
   methods: {
-    async addItem() {
+    async addItem(event) {
+      if (this.userLogin == "unknown") {
+        event.preventDefault();
+      }
       try {
         if (this.newToDo) {
-          const newItem = Object.assign({ name: this.newToDo, done: 0 });
-          await post("/api/todo", newItem);
+          const newItem = { name: this.newToDo, done: 0 };
+          await api.post("/api/todo/", newItem);
+          if (this.userLogin == "unknown") {
+            this.items.push({ ...newItem, id: this.items.length });
+          }
         }
       } catch (err) {
-        console.log("ADD ITEM FAILURE ==> " + err);
+        console.log('==> add "todo" failure ' + err);
       }
     },
     async delItem(id) {
       try {
-        const result = await del("/api/todo/" + id);
-        if (result.status === "ok") {
+        const result = await api.delete("/api/todo/" + id);
+        const { status } = result.data;
+        if (status == "ok" || this.userLogin == "unknown") {
           const idx = this.items.findIndex((el) => el.id === id);
           if (idx !== -1) {
             this.items.splice(idx, 1);
           }
         }
       } catch (err) {
-        console.log("DEL ITEM FAILURE ==> " + err);
+        console.log('==> delete "todo" failure ' + err);
       }
     },
     async doneItem(id, done) {
       try {
-        const result = await put("/api/todo/" + id, done);
-        if (result.status === "ok") {
+        const result = await api.put("/api/todo/" + id, { done });
+        const { status } = result.data;
+        if (status == "ok" || this.userLogin == "unknown") {
           this.items.forEach((el) => {
-            if (el.id === id) el.done = done;
+            if (el.id === id) {
+              el.done = done;
+            }
           });
         }
       } catch (err) {
-        console.log("CHANGE ITEM FAILURE ==> " + err);
+        console.log('==> change "todo" failure ' + err);
       }
     },
+  },
+  computed: {
+    ...mapGetters({ userLogin: "userLogin_getter" }),
   },
 };
 </script>
@@ -88,10 +112,12 @@ body {
     url("./assets/bg1.jpeg") center center / 18% repeat;
 }
 .todo {
+  display: flex;
+  flex-direction: column;
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  margin-top: 60px;
+  margin-top: 30px;
   h1 {
     text-align: center;
   }

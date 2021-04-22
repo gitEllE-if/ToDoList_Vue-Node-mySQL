@@ -4,7 +4,7 @@ module.exports = async (dbConnection, sql, values) => {
         return result;
     }
     catch (err) {
-        console.log(`==> failed query ` + err);
+        console.log('==> failed query ' + err);
         return null;
     }
 }

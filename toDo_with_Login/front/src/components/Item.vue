@@ -1,6 +1,6 @@
 <template>
   <div class="todoItem" :class="{ doneItem: item.done }">
-    <div class="todoId">{{ item.id }}</div>
+    <div class="todoId">{{ idx + 1 }}</div>
     <div class="todoName">{{ item.name }}</div>
     <div class="todoIcon">
       <font-awesome-icon
@@ -35,6 +35,7 @@ export default {
   components: { FontAwesomeIcon },
   props: {
     item: { type: Object, default: () => ({}) },
+    idx: { type: Number },
   },
 };
 </script>
