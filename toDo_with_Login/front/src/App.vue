@@ -37,15 +37,14 @@ export default {
     };
   },
   async mounted() {
-    let result = null;
     try {
-      result = await api.get("/api/todo");
-      result = result.data;
-      if (result.result) {
-        this.items = result.result;
+      const res = await api.get("/api/todo");
+      const { result } = res.data;
+      if (result) {
+        this.items = result;
       }
     } catch (err) {
-      console.log(`GET ITEM FAILURE ==> ${result.message} ` + err);
+      console.log(`==> get "todo" failure ` + err);
     }
   },
   methods: {
